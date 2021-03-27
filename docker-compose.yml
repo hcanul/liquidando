@@ -1,0 +1,52 @@
+version: '3'
+services: 
+  dbase:
+    image: mariadb
+    container_name: dbase
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: liquidando
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: db_user_pass
+    restart: always
+    ports:
+      - "6033:3306"
+    volumes:
+      - ./dbdata:/var/lib/mysql
+    command: mysqld --default-authentication-plugin=mysql_native_password
+
+  phpmyadmin_crm:
+    image: phpmyadmin/phpmyadmin
+    container_name: myadphp2
+    links:
+      - dbase
+    environment:
+      PMA_HOST: dbase
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - "8081:80"
+
+
+  api:
+    build:
+      context: ./backend
+    container_name: api
+    ports: 
+      - "7550:7550"
+    depends_on: 
+      - dbase
+    volumes:
+      - ./backend:/backend
+    restart: always
+    working_dir: /backend
+
+
+  www:
+    image: nginx
+    restart: always
+    ports: 
+      - "80:80"
+    volumes: 
+      - ./nginx/www:/usr/share/nginx/html:ro
